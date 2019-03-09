@@ -17,6 +17,7 @@ const ENV_LIST = [QE_CODE, STABLE_CODE, STAGING_CODE];
 class calendarService {
 
     constructor() {
+        this.listEvents = this.listEvents.bind(this);
     }
 
     setCode(oAuth2Client, code) {
