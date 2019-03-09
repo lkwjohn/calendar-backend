@@ -1,11 +1,12 @@
 import calendarRouter from './calendar.router';
 import express from 'express'
 import bodyParser from 'body-parser';
+import {WHITELIST_CORS_URLS} from './constants';
 const app = express()
 const port = 8081
 
 var allowCrossDomain = function (req, res, next) {
-    res.header('Access-Control-Allow-Origin', "http://localhost:3000");
+    res.header('Access-Control-Allow-Origin', WHITELIST_CORS_URLS.join());
     res.header('Access-Control-Allow-Methods', 'GET,PUT');
     res.header('Access-Control-Allow-Headers', 'Content-Type');
     next();
