@@ -1,6 +1,7 @@
 import fs from 'fs';
 import { google } from 'googleapis';
 import moment from 'moment';
+import { CALENDAR_ID, ENV_LIST } from './constants'
 
 // If modifying these scopes, delete token.json.
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
@@ -8,11 +9,6 @@ const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
 // created automatically when the authorization flow completes for the first
 // time.
 const TOKEN_PATH = 'token.json';
-
-const QE_CODE = '#qe';
-const STABLE_CODE = '#stable';
-const STAGING_CODE = '#staging';
-const ENV_LIST = [QE_CODE, STABLE_CODE, STAGING_CODE];
 
 class calendarService {
 
@@ -79,7 +75,7 @@ class calendarService {
         const calendar = google.calendar({ version: 'v3', auth });
         return new Promise((resolve, rejects) => {
             calendar.events.list({
-                calendarId: 'primary',
+                calendarId: CALENDAR_ID,
                 timeMin: (new Date()).toISOString(),
                 maxResults: 20,
                 singleEvents: true,
@@ -89,71 +85,74 @@ class calendarService {
                     console.log('The API returned an error: ' + err);
                     rejects('The API returned an error');
                 }
-                const data = res.data.items;
-                let events = [];
-                let environmentCodeRecorded = [];
 
-                if (data.length) {
-                    let today = this._getCurrentDate();
-                    data.map((event, i) => {
-                        const startDate = event.start.dateTime || event.start.date;
-                        const endDate = event.end.dateTime || event.end.date;
-                        let eventStartDate = new moment(startDate);
-                        let eventEndDate = new moment(endDate);
-
-                        if (eventStartDate.isSame(today, 'day') && today.isSameOrAfter(eventStartDate, 'minute') && today.isSameOrBefore(eventEndDate, 'minute')) {
-                            let envStatus = [
-                                { index: event.summary.indexOf(QE_CODE), code: QE_CODE },
-                                { index: event.summary.indexOf(STABLE_CODE), code: STABLE_CODE },
-                                { index: event.summary.indexOf(STAGING_CODE), code: STAGING_CODE }
-                            ];
-
-                            envStatus = envStatus.sort(function (a, b) {
-                                if (a.index < b.index) return -1;
-                                if (a.index > b.index) return 1;
-                                return 0;
-                            });
-
-                            envStatus.map((envState, i) => {
-
-                                let summary = '';
-                                if (envState.index !== -1 && !events.find(event => event.code === envState.code)) {
-
-                                    if (i + 1 < envStatus.length && envStatus[i + 1].index !== -1) {
-                                        summary = event.summary.substring(envState.code.length + envState.index, envStatus[i + 1].index);
-                                    }
-                                    else {
-                                        summary = event.summary.substring(envState.code.length + envState.index, event.summary.length);
-                                    }
-
-                                    summary = summary.trim();
-                                    environmentCodeRecorded.push(envState.code);
-                                    events.push({ code: envState.code, summary });
-                                }
-                            })
-                        }
-                    });
-
-
-                    if (events.length < 3) {
-                        let environmentNotRecorded = [];
-
-                        ENV_LIST.map(env => {
-                            if (!events.find(event => event.code === env)) {
-                                environmentNotRecorded.push(env);
-                            }
-                        })
-
-                        environmentNotRecorded.map(env => {
-                            events.push({ code: env, summary: 'Free' });
-                        })
-
-                    }
-                }
-
+                let events = this._retrieveEnvironmentStatus(res.data.items);
                 resolve(events);
             });
         })
+    }
+
+    _retrieveEnvironmentStatus(data) {
+        let events = [];
+        let environmentCodeRecorded = [];
+
+        if (data.length) {
+            let today = this._getCurrentDate();
+            data.map((event, i) => {
+                const startDate = event.start.dateTime || event.start.date;
+                const endDate = event.end.dateTime || event.end.date;
+                let eventStartDate = new moment(startDate);
+                let eventEndDate = new moment(endDate);
+
+                if (eventStartDate.isSame(today, 'day') && today.isSameOrAfter(eventStartDate, 'minute') && today.isSameOrBefore(eventEndDate, 'minute')) {
+                    let envStatus = ENV_LIST.map((item) => {
+                        return { index: event.summary.indexOf(item), code: item }
+                    });
+
+                    envStatus = envStatus.sort(function (a, b) {
+                        if (a.index < b.index) return -1;
+                        if (a.index > b.index) return 1;
+                        return 0;
+                    });
+
+                    envStatus.map((envState, i) => {
+
+                        let summary = '';
+                        if (envState.index !== -1 && !events.find(event => event.code === envState.code)) {
+
+                            if (i + 1 < envStatus.length && envStatus[i + 1].index !== -1) {
+                                summary = event.summary.substring(envState.code.length + envState.index, envStatus[i + 1].index);
+                            }
+                            else {
+                                summary = event.summary.substring(envState.code.length + envState.index, event.summary.length);
+                            }
+
+                            summary = summary.trim();
+                            environmentCodeRecorded.push(envState.code);
+                            events.push({ code: envState.code, summary });
+                        }
+                    })
+                }
+            });
+
+
+            if (events.length < 3) {
+                let environmentNotRecorded = [];
+
+                ENV_LIST.map(env => {
+                    if (!events.find(event => event.code === env)) {
+                        environmentNotRecorded.push(env);
+                    }
+                })
+
+                environmentNotRecorded.map(env => {
+                    events.push({ code: env, summary: 'Free' });
+                })
+
+            }
+        }
+
+        return events;
     }
 
     _generateOAuth2Client() {
