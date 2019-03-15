@@ -96,60 +96,58 @@ class calendarService {
         let events = [];
         let environmentCodeRecorded = [];
 
-        if (data.length) {
-            let today = this._getCurrentDate();
-            data.map((event, i) => {
-                const startDate = event.start.dateTime || event.start.date;
-                const endDate = event.end.dateTime || event.end.date;
-                let eventStartDate = new moment(startDate);
-                let eventEndDate = new moment(endDate);
+        let today = this._getCurrentDate();
+        data.map((event, i) => {
+            const startDate = event.start.dateTime || event.start.date;
+            const endDate = event.end.dateTime || event.end.date;
+            let eventStartDate = new moment(startDate);
+            let eventEndDate = new moment(endDate);
 
-                if (eventStartDate.isSame(today, 'day') && today.isSameOrAfter(eventStartDate, 'minute') && today.isSameOrBefore(eventEndDate, 'minute')) {
-                    let envStatus = ENV_LIST.map((item) => {
-                        return { index: event.summary.indexOf(item), code: item }
-                    });
+            if (eventStartDate.isSame(today, 'day') && today.isSameOrAfter(eventStartDate, 'minute') && today.isSameOrBefore(eventEndDate, 'minute')) {
+                let envStatus = ENV_LIST.map((item) => {
+                    return { index: event.summary.indexOf(item), code: item }
+                });
 
-                    envStatus = envStatus.sort(function (a, b) {
-                        if (a.index < b.index) return -1;
-                        if (a.index > b.index) return 1;
-                        return 0;
-                    });
+                envStatus = envStatus.sort(function (a, b) {
+                    if (a.index < b.index) return -1;
+                    if (a.index > b.index) return 1;
+                    return 0;
+                });
 
-                    envStatus.map((envState, i) => {
+                envStatus.map((envState, i) => {
 
-                        let summary = '';
-                        if (envState.index !== -1 && !events.find(event => event.code === envState.code)) {
+                    let summary = '';
+                    if (envState.index !== -1 && !events.find(event => event.code === envState.code)) {
 
-                            if (i + 1 < envStatus.length && envStatus[i + 1].index !== -1) {
-                                summary = event.summary.substring(envState.code.length + envState.index, envStatus[i + 1].index);
-                            }
-                            else {
-                                summary = event.summary.substring(envState.code.length + envState.index, event.summary.length);
-                            }
-
-                            summary = summary.trim();
-                            environmentCodeRecorded.push(envState.code);
-                            events.push({ code: envState.code, summary });
+                        if (i + 1 < envStatus.length && envStatus[i + 1].index !== -1) {
+                            summary = event.summary.substring(envState.code.length + envState.index, envStatus[i + 1].index);
                         }
-                    })
-                }
-            });
+                        else {
+                            summary = event.summary.substring(envState.code.length + envState.index, event.summary.length);
+                        }
 
-
-            if (events.length < 3) {
-                let environmentNotRecorded = [];
-
-                ENV_LIST.map(env => {
-                    if (!events.find(event => event.code === env)) {
-                        environmentNotRecorded.push(env);
+                        summary = summary.trim();
+                        environmentCodeRecorded.push(envState.code);
+                        events.push({ code: envState.code, summary });
                     }
                 })
-
-                environmentNotRecorded.map(env => {
-                    events.push({ code: env, summary: 'Free' });
-                })
-
             }
+        });
+
+
+        if (events.length < 3) {
+            let environmentNotRecorded = [];
+
+            ENV_LIST.map(env => {
+                if (!events.find(event => event.code === env)) {
+                    environmentNotRecorded.push(env);
+                }
+            })
+
+            environmentNotRecorded.map(env => {
+                events.push({ code: env, summary: 'Free' });
+            })
+
         }
 
         return events;
