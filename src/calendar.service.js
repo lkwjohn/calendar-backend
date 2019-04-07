@@ -105,7 +105,7 @@ class calendarService {
 
             if (eventStartDate.isSame(today, 'day') && today.isSameOrAfter(eventStartDate, 'minute') && today.isSameOrBefore(eventEndDate, 'minute')) {
                 let envStatus = ENV_LIST.map((item) => {
-                    return { index: event.summary.indexOf(item), code: item }
+                    return { index: event.summary.toLowerCase().indexOf(item), code: item }
                 });
 
                 envStatus = envStatus.sort(function (a, b) {
@@ -128,14 +128,14 @@ class calendarService {
 
                         summary = summary.trim();
                         environmentCodeRecorded.push(envState.code);
-                        events.push({ code: envState.code, summary });
+                        events.push({ code: envState.code.toLowerCase(), summary });
                     }
                 })
             }
         });
 
 
-        if (events.length < 3) {
+        if (events.length < ENV_LIST.length) {
             let environmentNotRecorded = [];
 
             ENV_LIST.map(env => {
