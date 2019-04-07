@@ -71,7 +71,7 @@ describe('Calendar Service Test', () => {
             ];
 
             let envEvents = service._retrieveEnvironmentStatus(calendarEvents);
-            expect(envEvents.length).toEqual(3);
+            expect(envEvents.length).toEqual(ENV_LIST.length);
 
             let numberOfEnvWithOccupiedStatus = 0;
             envEvents.map(env => {
@@ -88,10 +88,46 @@ describe('Calendar Service Test', () => {
 
         });
 
+        test('Should return RC status and other with default status given a environment event start 2 days before and ends 2 days later', () => {
+            let todayEventStartDate = new moment();
+            let todayEventEndDate = new moment()
+            todayEventStartDate.add(-2, 'day');
+            todayEventStartDate = todayEventStartDate.format('YYYY-MM-DD HH:mm:ss');
+            todayEventEndDate.add(2, 'day');
+            todayEventEndDate = todayEventEndDate.format('YYYY-MM-DD HH:mm:ss');
+
+            let calendarEvents = [
+                {
+                    summary: '#rc testing',
+                    start: {
+                        dateTime: todayEventStartDate
+                    },
+                    end: {
+                        dateTime: todayEventEndDate
+                    }
+                }
+            ];
+            let envEvents = service._retrieveEnvironmentStatus(calendarEvents);
+
+            expect(envEvents.length).toEqual(ENV_LIST.length);
+            let numberOfEnvWithOccupiedStatus = 0;
+            envEvents.map(env => {
+
+                expect(env.code).toBeDefined();
+                expect(env.summary).toBeDefined();
+                expect(ENV_LIST).toContain(env.code);
+                if (env.summary === 'testing') {
+                    numberOfEnvWithOccupiedStatus++;
+                }
+            })
+
+            expect(numberOfEnvWithOccupiedStatus).toEqual(1);
+        });
+
         test('All environment should return  default status given no events', () => {
             let envEvents = service._retrieveEnvironmentStatus([]);
 
-            expect(envEvents.length).toEqual(3);
+            expect(envEvents.length).toEqual(ENV_LIST.length);
             let numberOfEnvWithOccupiedStatus = 0;
             envEvents.map(env => {
 
@@ -109,7 +145,7 @@ describe('Calendar Service Test', () => {
         test('All environment should return  default status given a environment event that have passed', () => {
             let todayEventStartDate = new moment();
             let todayEventEndDate = new moment()
-            todayEventStartDate.add(-10, 'hours');
+            todayEventStartDate.add(-1, 'hours');
             todayEventStartDate = todayEventStartDate.format('YYYY-MM-DD HH:mm:ss');
             todayEventEndDate.add(-2, 'hours');
             todayEventEndDate = todayEventEndDate.format('YYYY-MM-DD HH:mm:ss');
@@ -127,7 +163,7 @@ describe('Calendar Service Test', () => {
             ];
             let envEvents = service._retrieveEnvironmentStatus(calendarEvents);
 
-            expect(envEvents.length).toEqual(3);
+            expect(envEvents.length).toEqual(ENV_LIST.length);
             let numberOfEnvWithOccupiedStatus = 0;
             envEvents.map(env => {
 
@@ -163,7 +199,7 @@ describe('Calendar Service Test', () => {
             ];
             let envEvents = service._retrieveEnvironmentStatus(calendarEvents);
 
-            expect(envEvents.length).toEqual(3);
+            expect(envEvents.length).toEqual(ENV_LIST.length);
             let numberOfEnvWithOccupiedStatus = 0;
             envEvents.map(env => {
 

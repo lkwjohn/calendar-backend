@@ -103,7 +103,7 @@ class calendarService {
             let eventStartDate = new moment(startDate);
             let eventEndDate = new moment(endDate);
 
-            if (eventStartDate.isSame(today, 'day') && today.isSameOrAfter(eventStartDate, 'minute') && today.isSameOrBefore(eventEndDate, 'minute')) {
+            if (today.isSameOrAfter(eventStartDate, 'minute') && today.isSameOrBefore(eventEndDate, 'minute')) {
                 let envStatus = ENV_LIST.map((item) => {
                     return { index: event.summary.toLowerCase().indexOf(item), code: item }
                 });
